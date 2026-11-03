@@ -3,6 +3,17 @@ import { useState, useEffect } from 'react'
 import { getTransactions } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts'
+
 const Dashboard = () => {
   const [search, setSearch] = useState('')
   const [type, setType] = useState('all')
@@ -11,7 +22,47 @@ const Dashboard = () => {
   const [endDate, setEndDate] = useState('')
   const [sort, setSort] = useState('newest')
   const [transactions, setTransactions] = useState([])
+  const [allTransactions, setAllTransactions] = useState([])
   const [loading, setLoading] = useState(false)
+
+  // Calculate total income
+const totalIncome = allTransactions
+  .filter((transaction) => transaction.type === 'income')
+  .reduce((total, transaction) => total + transaction.amount, 0)
+
+// Calculate total expenses
+const totalExpenses = allTransactions
+  .filter((transaction) => transaction.type === 'expense')
+  .reduce((total, transaction) => total + transaction.amount, 0)
+
+// Calculate remaining balance
+const totalBalance = totalIncome - totalExpenses
+
+const incomeExpenseData = [
+  {
+    name: 'Finances',
+    Income: totalIncome,
+    Expenses: totalExpenses
+  }
+]
+
+const expenseCategoryData = Object.values(
+  allTransactions
+    .filter((transaction) => transaction.type === 'expense')
+    .reduce((categories, transaction) => {
+      const category = transaction.category
+
+      categories[category] = categories[category] || {
+        name: category,
+        amount: 0
+      }
+
+      categories[category].amount += transaction.amount
+
+      return categories
+    }, {})
+)
+
 
   const { token } = useAuth()
 
@@ -29,11 +80,19 @@ const Dashboard = () => {
 
     params.append('sort', sort)
 
-    const data = await getTransactions(token, params.toString())
+    // Fetch all transactions for dashboard calculations
+const allData = await getTransactions(token)
 
-    if (data.success) {
-      setTransactions(data.transactions)
-    } else {
+if (allData.success) {
+  setAllTransactions(allData.transactions)
+}
+
+// Fetch filtered transactions for the table
+const data = await getTransactions(token, params.toString())
+
+if (data.success) {
+  setTransactions(data.transactions)
+}   else {
       console.error(data.message)
     }
   } catch (error) {
@@ -74,48 +133,91 @@ useEffect(() => {
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-500">Total Balance</p>
           <h2 className="mt-3 text-3xl font-bold text-slate-800">
-            ₹0.00
+            ₹{totalBalance.toLocaleString('en-IN', {
+  minimumFractionDigits: 2
+})}
           </h2>
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-500">Total Income</p>
           <h2 className="mt-3 text-3xl font-bold text-green-600">
-            ₹0.00
+            ₹{totalIncome.toLocaleString('en-IN', {
+  minimumFractionDigits: 2
+})}
           </h2>
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-500">Total Expenses</p>
           <h2 className="mt-3 text-3xl font-bold text-red-500">
-            ₹0.00
+            ₹{totalExpenses.toLocaleString('en-IN', {
+  minimumFractionDigits: 2
+})}
           </h2>
         </div>
 
       </div>
 
       {/* Charts Section */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    {/* Charts Section */}
+<div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-slate-800">
-            Income vs Expenses
-          </h3>
-          <div className="flex h-64 items-center justify-center text-slate-400">
-            Chart coming soon
-          </div>
-        </div>
+  {/* Income vs Expenses */}
+  <div className="rounded-xl bg-white p-6 shadow-sm">
+    <h3 className="mb-4 text-lg font-semibold text-slate-800">
+      Income vs Expenses
+    </h3>
 
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-slate-800">
-            Expense Categories
-          </h3>
-          <div className="flex h-64 items-center justify-center text-slate-400">
-            Chart coming soon
-          </div>
-        </div>
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={incomeExpenseData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" />
+        <YAxis />
+        <Tooltip
+          formatter={(value) =>
+            `₹${Number(value).toLocaleString('en-IN')}`
+          }
+        />
+        <Legend />
+        <Bar dataKey="Income" fill="#16a34a" radius={[6, 6, 0, 0]} />
+        <Bar dataKey="Expenses" fill="#ef4444" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
 
+  {/* Expense Categories */}
+  <div className="rounded-xl bg-white p-6 shadow-sm">
+    <h3 className="mb-4 text-lg font-semibold text-slate-800">
+      Expense Categories
+    </h3>
+
+    {expenseCategoryData.length === 0 ? (
+      <div className="flex h-64 items-center justify-center text-slate-400">
+        No expense data available yet.
       </div>
+    ) : (
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={expenseCategoryData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip
+            formatter={(value) =>
+              `₹${Number(value).toLocaleString('en-IN')}`
+            }
+          />
+          <Bar
+            dataKey="amount"
+            fill="#6366f1"
+            radius={[6, 6, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    )}
+  </div>
+
+</div>
 
       {/* Recent Transactions */}
       <div className="mt-8 rounded-xl bg-white p-6 shadow-sm">
