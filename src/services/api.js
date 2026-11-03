@@ -27,13 +27,16 @@ export const loginUser = async (userData) => {
 }
 
 // Get transactions
-export const getTransactions = async (token) => {
-  const response = await fetch(`${API_URL}/transactions`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`
+export const getTransactions = async (token, queryParams = '') => {
+  const response = await fetch(
+    `${API_URL}/transactions?${queryParams}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  })
+  )
 
   return response.json()
 }
