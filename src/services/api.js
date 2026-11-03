@@ -1,3 +1,4 @@
+
 const API_URL = 'http://localhost:5000/api'
 
 // Register user
@@ -50,6 +51,61 @@ export const addTransaction = async (transactionData, token) => {
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify(transactionData)
+  })
+
+  return response.json()
+}
+
+// Create budget
+export const addBudget = async (budgetData, token) => {
+  const response = await fetch(`${API_URL}/budgets`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(budgetData)
+  })
+
+  return response.json()
+}
+
+// Get monthly budgets
+export const getBudgets = async (month, year, token) => {
+  const response = await fetch(
+    `${API_URL}/budgets?month=${month}&year=${year}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  )
+
+  return response.json()
+}
+
+// Update budget
+export const updateBudget = async (id, budgetData, token) => {
+  const response = await fetch(`${API_URL}/budgets/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(budgetData)
+  })
+
+  return response.json()
+}
+
+// Delete budget
+export const deleteBudget = async (id, token) => {
+  const response = await fetch(`${API_URL}/budgets/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   })
 
   return response.json()
