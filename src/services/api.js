@@ -56,6 +56,42 @@ export const addTransaction = async (transactionData, token) => {
   return response.json()
 }
 
+// Update transaction
+export const updateTransaction = async (id, transactionData, token) => {
+  try {
+    const response = await fetch(`${API_URL}/transactions/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(transactionData)
+    })
+
+    return await response.json()
+  } catch (error) {
+    console.error('Update transaction error:', error)
+    throw error
+  }
+}
+
+// Delete transaction
+export const deleteTransaction = async (id, token) => {
+  try {
+    const response = await fetch(`${API_URL}/transactions/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    return await response.json()
+  } catch (error) {
+    console.error('Delete transaction error:', error)
+    throw error
+  }
+}
+
 // Create budget
 export const addBudget = async (budgetData, token) => {
   const response = await fetch(`${API_URL}/budgets`, {
